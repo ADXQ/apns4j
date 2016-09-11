@@ -16,7 +16,7 @@
  *
  */
 
-package cn.teaey.apns4j.network;
+package cn.teaey.apns4j.network.async;
 
 import cn.teaey.apns4j.protocol.NotifyPayload;
 

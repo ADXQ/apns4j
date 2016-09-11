@@ -108,9 +108,9 @@ public final class SecuritySocketFactory {
             return this;
         }
 
-        public SecuritySocketFactory.Builder appleServer(AppleServer appleServer) {
-            this.host = appleServer.getHost();
-            this.port = appleServer.getPort();
+        public SecuritySocketFactory.Builder appleServer(ApnsGateway apnsGateway) {
+            this.host = apnsGateway.host();
+            this.port = apnsGateway.port();
             return this;
         }
 

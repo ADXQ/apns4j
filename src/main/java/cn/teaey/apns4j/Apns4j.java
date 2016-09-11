@@ -18,7 +18,6 @@
 
 package cn.teaey.apns4j;
 
-import cn.teaey.apns4j.keystore.InvalidKeyStoreException;
 import cn.teaey.apns4j.keystore.KeyStoreHelper;
 import cn.teaey.apns4j.keystore.KeyStoreWrapper;
 import cn.teaey.apns4j.network.*;
@@ -38,21 +37,11 @@ public class Apns4j {
         return KeyStoreHelper.newKeyStoreWrapper(keyStoreMeta, keyStorePassword);
     }
 
-    private static final SecuritySocketFactory buildSecuritySocketFactory(KeyStoreWrapper keyStoreWrapper, AppleServer appleServer) {
-        try {
-            return SecuritySocketFactory.newBuilder().keyStoreWrapper(keyStoreWrapper).appleServer(appleServer).build();
-        } catch (InvalidKeyStoreException e) {
-            throw new ApnsException(e);
-        }
+    public static final ApnsChannelFactory.Builder apnsChannelFactory() {
+        return ApnsChannelFactory.newBuilder();
     }
 
-    public static final SecurityConnection buildSecurityConnection(KeyStoreWrapper keyStoreWrapper, AppleServer appleServer) {
-        SecuritySocketFactory factory = buildSecuritySocketFactory(keyStoreWrapper, appleServer);
-        return SecurityConnection.newSecurityConnection(factory);
-    }
-
-    public static ApnsService buildApnsService(int executorSize, KeyStoreWrapper keyStoreWrapper, AppleServer appleServer) {
-        SecuritySocketFactory securitySocketFactory = buildSecuritySocketFactory(keyStoreWrapper, appleServer);
-        return ApnsService.newApnsService(executorSize, securitySocketFactory);
+    public static ApnsService apnsService(int executorSize, KeyStoreWrapper keyStoreWrapper, ApnsGateway apnsGateway) {
+        return ApnsService.newApnsService(executorSize, apnsChannelFactory().apnsServer(apnsGateway).keyStoreWrapper(keyStoreWrapper).build());
     }
 }

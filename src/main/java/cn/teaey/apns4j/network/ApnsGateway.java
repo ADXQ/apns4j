@@ -16,20 +16,28 @@
  *
  */
 
-package cn.teaey.apns4j;
+package cn.teaey.apns4j.network;
 
 /**
- * @author teaey
- * @date 13-8-31
- * @since 1.0.0
+ * @author teaey(xiaofei.wxf)
+ * @since 1.0.3
  */
-public class ShutdownServiceException extends RuntimeException {
-    /**
-     * <p>Constructor for ShutdownServiceException.</p>
-     *
-     * @param msg a {@link String} object.
-     */
-    public ShutdownServiceException(String msg) {
-        super(msg);
+public enum ApnsGateway {
+    DEVELOPMENT("gateway.push.apple.com", 2195),
+    PRODUCTION("gateway.sandbox.push.apple.com", 2195);
+    private final String host;
+    private final int port;
+
+    ApnsGateway(String host, int port) {
+        this.host = host;
+        this.port = port;
+    }
+
+    public String host() {
+        return this.host;
+    }
+
+    public int port() {
+        return this.port;
     }
 }

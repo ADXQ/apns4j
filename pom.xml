@@ -7,15 +7,19 @@
     <parent>
         <groupId>com.github.teaey</groupId>
         <artifactId>teaey-parent</artifactId>
-        <version>1.0.0</version>
+        <version>1.0.1</version>
     </parent>
 
     <groupId>com.github.teaey</groupId>
     <artifactId>apns4j</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3-SNAPSHOT</version>
     <packaging>jar</packaging>
     <url>https://github.com/teaey/apns4j.git</url>
     <name>Apns4j</name>
+
+    <properties>
+        <java.version>1.7</java.version>
+    </properties>
 
     <developers>
         <developer>

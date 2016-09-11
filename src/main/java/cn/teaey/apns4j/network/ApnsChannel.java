@@ -19,6 +19,8 @@
 package cn.teaey.apns4j.network;
 
 import cn.teaey.apns4j.ApnsHelper;
+import cn.teaey.apns4j.network.async.ApnsFuture;
+import cn.teaey.apns4j.network.async.PayloadSender;
 import cn.teaey.apns4j.protocol.ErrorResponse;
 import cn.teaey.apns4j.protocol.NotifyPayload;
 
@@ -33,8 +35,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @date 13-8-31
  * @since 1.0.0
  */
-public class SecurityConnection implements Connection, PayloadSender<NotifyPayload> {
-    //private static final Logger log               = LoggerFactory.getLogger(SecurityConnection.class);
+public class ApnsChannel implements Channel, PayloadSender<NotifyPayload> {
+    //private static final Logger log               = LoggerFactory.getLogger(ApnsChannel.class);
     public static final int DEFAULT_TRY_TIMES = 3;
     private static final AtomicInteger COUNTER = new AtomicInteger(0);
     private final int id;
@@ -44,36 +46,17 @@ public class SecurityConnection implements Connection, PayloadSender<NotifyPaylo
     private OutputStream out;
     private int tryTimes;
 
-    private SecurityConnection(SecuritySocketFactory socketFactory) {
+    ApnsChannel(SecuritySocketFactory socketFactory) {
         this(socketFactory, DEFAULT_TRY_TIMES);
     }
 
-    private SecurityConnection(SecuritySocketFactory socketFactory, int tryTimes) {
+    ApnsChannel(SecuritySocketFactory socketFactory, int tryTimes) {
         this.socketFactory = socketFactory;
         this.tryTimes = tryTimes;
         this.id = COUNTER.incrementAndGet();
     }
 
-    /**
-     * <p>newSecurityConnection.</p>
-     *
-     * @param securitySocketFactory a {@link cn.teaey.apns4j.network.SecuritySocketFactory} object.
-     * @return a {@link cn.teaey.apns4j.network.SecurityConnection} object.
-     */
-    public static SecurityConnection newSecurityConnection(SecuritySocketFactory securitySocketFactory) {
-        return new SecurityConnection(securitySocketFactory);
-    }
 
-    /**
-     * <p>newSecurityConnection.</p>
-     *
-     * @param securitySocketFactory a {@link cn.teaey.apns4j.network.SecuritySocketFactory} object.
-     * @param tryTimes              a int.
-     * @return a {@link cn.teaey.apns4j.network.SecurityConnection} object.
-     */
-    public static SecurityConnection newSecurityConnection(SecuritySocketFactory securitySocketFactory, int tryTimes) {
-        return new SecurityConnection(securitySocketFactory, tryTimes);
-    }
 
     /**
      * <p>flush.</p>
