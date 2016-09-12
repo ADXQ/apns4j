@@ -23,8 +23,12 @@ package cn.teaey.apns4j.network;
  * @since 1.0.3
  */
 public enum ApnsGateway {
-    DEVELOPMENT("gateway.push.apple.com", 2195),
-    PRODUCTION("gateway.sandbox.push.apple.com", 2195);
+    DEVELOPMENT("gateway.sandbox.push.apple.com", 2195),
+    PRODUCTION("gateway.push.apple.com", 2195),
+    RESTFUL_DEVELOPMENT("api.development.push.apple.com", 443),
+    RESTFUL_PRODUCTION("api.push.apple.com", 443),
+    RESTFUL_DEVELOPMENT_BAK("api.development.push.apple.com", 2197),
+    RESTFUL_PRODUCTION_BAK("api.push.apple.com", 2197);
     private final String host;
     private final int port;
 

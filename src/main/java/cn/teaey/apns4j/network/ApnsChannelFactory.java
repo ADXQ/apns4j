@@ -18,9 +18,6 @@
 
 package cn.teaey.apns4j.network;
 
-import cn.teaey.apns4j.keystore.InvalidKeyStoreException;
-import cn.teaey.apns4j.keystore.KeyStoreWrapper;
-
 /**
  * @author teaey(xiaofei.wxf)
  * @since 1.0.3
@@ -28,37 +25,13 @@ import cn.teaey.apns4j.keystore.KeyStoreWrapper;
 public final class ApnsChannelFactory {
     private final SecuritySocketFactory securitySocketFactory;
 
-    private ApnsChannelFactory(SecuritySocketFactory securitySocketFactory) {
+    public ApnsChannelFactory(SecuritySocketFactory securitySocketFactory) {
         this.securitySocketFactory = securitySocketFactory;
     }
 
-    public static final Builder newBuilder() {
-        return new Builder();
+    public SecuritySocketFactory getSecuritySocketFactory() {
+        return securitySocketFactory;
     }
-
-    public static final class Builder {
-        private KeyStoreWrapper keyStoreWrapper;
-        private ApnsGateway apnsGateway;
-
-        public Builder keyStoreWrapper(KeyStoreWrapper keyStoreWrapper) {
-            this.keyStoreWrapper = keyStoreWrapper;
-            return this;
-        }
-
-        public Builder apnsServer(ApnsGateway apnsGateway) {
-            this.apnsGateway = apnsGateway;
-            return this;
-        }
-
-        public ApnsChannelFactory build() {
-            try {
-                return new ApnsChannelFactory(SecuritySocketFactory.newBuilder().appleServer(this.apnsGateway).keyStoreWrapper(this.keyStoreWrapper).build());
-            } catch (InvalidKeyStoreException e) {
-                throw new ApnsException(e);
-            }
-        }
-    }
-
 
     public ApnsChannel newChannel() {
         return new ApnsChannel(this.securitySocketFactory);

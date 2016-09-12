@@ -18,10 +18,13 @@
 
 package cn.teaey.apns4j;
 
-import cn.teaey.apns4j.keystore.KeyStoreHelper;
-import cn.teaey.apns4j.keystore.KeyStoreWrapper;
+import cn.teaey.apns4j.keystore.KeyStoreGetter;
+import cn.teaey.apns4j.keystore.KeyStoreType;
 import cn.teaey.apns4j.network.*;
-import cn.teaey.apns4j.protocol.NotifyPayload;
+import cn.teaey.apns4j.protocol.ApnsPayload;
+
+import java.io.File;
+import java.io.InputStream;
 
 /**
  * @author xiaofei.wxf
@@ -29,19 +32,64 @@ import cn.teaey.apns4j.protocol.NotifyPayload;
  * @since 1.0.2
  */
 public class Apns4j {
-    public static final NotifyPayload buildNotifyPayload() {
-        return NotifyPayload.newNotifyPayload();
+    /**
+     * <p>newNotifyPayload.</p>
+     *
+     * @return a {@link ApnsPayload} object.
+     */
+    public static final ApnsPayload newApnsPayload() {
+        return new ApnsPayload();
     }
 
-    public static final KeyStoreWrapper buildKeyStoreWrapper(Object keyStoreMeta, String keyStorePassword) {
-        return KeyStoreHelper.newKeyStoreWrapper(keyStoreMeta, keyStorePassword);
+    public static final class ApnsChannelFactoryBuilder {
+        private Object keyStoreMeta;
+        private String keyStorePwd;
+        private ApnsGateway apnsGateway = ApnsGateway.DEVELOPMENT;
+        private KeyStoreType keyStoreType = KeyStoreType.PKCS12;
+
+        public ApnsChannelFactoryBuilder keyStoreMeta(Object keyStoreMeta) {
+            ApnsHelper.checkNullThrowException(keyStoreMeta, "keyStoreMeta");
+            this.keyStoreMeta = keyStoreMeta;
+            return this;
+        }
+
+        public ApnsChannelFactoryBuilder keyStormPwd(String keyStorePwd) {
+            ApnsHelper.checkNullThrowException(keyStorePwd, "keyStorePwd");
+            this.keyStorePwd = keyStorePwd;
+            return this;
+        }
+
+        public ApnsChannelFactoryBuilder apnsGateway(ApnsGateway apnsGateway) {
+            ApnsHelper.checkNullThrowException(apnsGateway, "apnsGateway");
+            this.apnsGateway = apnsGateway;
+            return this;
+        }
+
+        public ApnsChannelFactoryBuilder keyStoreType(KeyStoreType keyStoreType) {
+            ApnsHelper.checkNullThrowException(keyStoreType, "keyStoreType");
+            this.keyStoreType = keyStoreType;
+            return this;
+        }
+
+        public ApnsChannelFactory build() {
+            KeyStoreGetter keyStoreGetter = null;
+            if (keyStoreMeta instanceof String) {
+                keyStoreGetter = new KeyStoreGetter((String) this.keyStoreMeta, this.keyStorePwd, this.keyStoreType);
+            } else if (keyStoreMeta instanceof File) {
+                keyStoreGetter = new KeyStoreGetter((File) this.keyStoreMeta, this.keyStorePwd, this.keyStoreType);
+            } else if (keyStoreMeta instanceof InputStream) {
+                keyStoreGetter = new KeyStoreGetter((InputStream) this.keyStoreMeta, this.keyStorePwd, this.keyStoreType);
+            }
+            if (null == keyStoreGetter) {
+                throw new IllegalArgumentException(keyStoreMeta.getClass().getName());
+            }
+            SecuritySocketFactory securitySocketFactory = new SecuritySocketFactory(this.apnsGateway.host(), this.apnsGateway.port(), keyStoreGetter.keyStore(), keyStoreGetter.keyStorePwd());
+            return new ApnsChannelFactory(securitySocketFactory);
+        }
     }
 
-    public static final ApnsChannelFactory.Builder apnsChannelFactory() {
-        return ApnsChannelFactory.newBuilder();
+    public static final ApnsChannelFactoryBuilder newApnsChannelFactoryBuilder() {
+        return new ApnsChannelFactoryBuilder();
     }
 
-    public static ApnsService apnsService(int executorSize, KeyStoreWrapper keyStoreWrapper, ApnsGateway apnsGateway) {
-        return ApnsService.newApnsService(executorSize, apnsChannelFactory().apnsServer(apnsGateway).keyStoreWrapper(keyStoreWrapper).build());
-    }
 }

@@ -18,24 +18,25 @@
 
 package cn.teaey.apns4j.network;
 
+import cn.teaey.apns4j.ApnsException;
 import cn.teaey.apns4j.ApnsHelper;
 import cn.teaey.apns4j.network.async.ApnsFuture;
 import cn.teaey.apns4j.network.async.PayloadSender;
-import cn.teaey.apns4j.protocol.ErrorResponse;
-import cn.teaey.apns4j.protocol.NotifyPayload;
+import cn.teaey.apns4j.protocol.ApnsPayload;
+import cn.teaey.apns4j.protocol.ErrorResp;
 
 import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * @author teaey
- * @date 13-8-31
- * @since 1.0.0
+ * @author teaey(xiaofei.wxf)
+ * @since 1.0.3
  */
-public class ApnsChannel implements Channel, PayloadSender<NotifyPayload> {
+public class ApnsChannel implements Channel, PayloadSender<ApnsPayload> {
     //private static final Logger log               = LoggerFactory.getLogger(ApnsChannel.class);
     public static final int DEFAULT_TRY_TIMES = 3;
     private static final AtomicInteger COUNTER = new AtomicInteger(0);
@@ -45,17 +46,17 @@ public class ApnsChannel implements Channel, PayloadSender<NotifyPayload> {
     private InputStream in;
     private OutputStream out;
     private int tryTimes;
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
-    ApnsChannel(SecuritySocketFactory socketFactory) {
+    public ApnsChannel(SecuritySocketFactory socketFactory) {
         this(socketFactory, DEFAULT_TRY_TIMES);
     }
 
-    ApnsChannel(SecuritySocketFactory socketFactory, int tryTimes) {
+    public ApnsChannel(SecuritySocketFactory socketFactory, int tryTimes) {
         this.socketFactory = socketFactory;
         this.tryTimes = tryTimes;
         this.id = COUNTER.incrementAndGet();
     }
-
 
 
     /**
@@ -64,19 +65,18 @@ public class ApnsChannel implements Channel, PayloadSender<NotifyPayload> {
      * @throws java.io.IOException if any.
      */
     private void flush() throws IOException {
+        checkClosed();
         out().flush();
     }
 
-    /**
-     * Send a payload with a devicetoken bytes(32 bytes)
-     *
-     * @param deviceTokenBytes an array of byte.
-     * @param notifyPayload    a {@link cn.teaey.apns4j.protocol.NotifyPayload} object.
-     */
-    public ApnsFuture sendAndFlush(byte[] deviceTokenBytes, NotifyPayload notifyPayload) {
+    public ApnsFuture sendAndFlush(byte[] deviceTokenBytes, ApnsPayload apnsPayload, int tryTimes) {
+        checkClosed();
+        if(tryTimes < 1) {
+            tryTimes = 1;
+        }
         ApnsHelper.checkDeviceToken(deviceTokenBytes);
-        String jsonString = notifyPayload.toJsonString();
-        byte[] binaryData = ApnsHelper.toRequestBytes(deviceTokenBytes, jsonString, notifyPayload.getIdentifier(), notifyPayload.getExpiry());
+        String jsonString = apnsPayload.toJsonString();
+        byte[] binaryData = ApnsHelper.toRequestBytes(deviceTokenBytes, jsonString, apnsPayload.getIdentifier(), apnsPayload.getExpiry());
         for (int i = 1; i <= tryTimes; i++) {
             try {
                 socket();
@@ -96,29 +96,56 @@ public class ApnsChannel implements Channel, PayloadSender<NotifyPayload> {
         }
         return null;
     }
+    /**
+     * Send a payload with a devicetoken bytes(32 bytes)
+     *
+     * @param deviceTokenBytes an array of byte.
+     * @param apnsPayload      a {@link ApnsPayload} object.
+     */
+    public ApnsFuture sendAndFlush(byte[] deviceTokenBytes, ApnsPayload apnsPayload) {
+        checkClosed();
+        return this.sendAndFlush(deviceTokenBytes, apnsPayload, tryTimes);
+    }
 
     /**
      * Send a payload with a devicetoken string(length 64)
      *
      * @param deviceTokenString a {@link String} object.
-     * @param notifyPayload     a {@link cn.teaey.apns4j.protocol.NotifyPayload} object.
+     * @param apnsPayload       a {@link ApnsPayload} object.
      * @throws java.io.IOException if any.
      */
-    public ApnsFuture sendAndFlush(String deviceTokenString, NotifyPayload notifyPayload) {
-        return sendAndFlush(ApnsHelper.toByteArray(deviceTokenString), notifyPayload);
+    public ApnsFuture sendAndFlush(String deviceTokenString, ApnsPayload apnsPayload, int tryTimes) {
+        checkClosed();
+        return sendAndFlush(ApnsHelper.toByteArray(deviceTokenString), apnsPayload, tryTimes);
     }
 
     /**
-     * <p>readErrorResponse.</p>
+     * Send a payload with a devicetoken string(length 64)
      *
-     * @return a {@link cn.teaey.apns4j.protocol.ErrorResponse} object.
+     * @param deviceTokenString a {@link String} object.
+     * @param apnsPayload       a {@link ApnsPayload} object.
+     * @throws java.io.IOException if any.
      */
-    public ErrorResponse readErrorResponse() {
+    public ApnsFuture sendAndFlush(String deviceTokenString, ApnsPayload apnsPayload) {
+        checkClosed();
+        return this.sendAndFlush(ApnsHelper.toByteArray(deviceTokenString), apnsPayload);
+    }
+
+    /**
+     * <p>recvErrorResp.</p>
+     *
+     * @return a {@link ErrorResp} object.
+     */
+    public ErrorResp recvErrorResp() {
+        checkClosed();
         try {
-            if (in().available() >= 6) {
+            if (null == in()) {
+                return null;
+            }
+            if (in().available() > 0) {
                 byte[] data = new byte[6];
                 recv(data);
-                return new ErrorResponse(data);
+                return new ErrorResp(data);
             } else {
                 return null;
             }
@@ -147,9 +174,17 @@ public class ApnsChannel implements Channel, PayloadSender<NotifyPayload> {
     @Override
     public void close() {
         try {
-            _close();
+            if (this.closed.compareAndSet(false, true)) {
+                _close();
+            }
         } catch (IOException e) {
             throw new ApnsException(e);
+        }
+    }
+
+    private void checkClosed() {
+        if (closed.get()) {
+            throw new IllegalStateException("Channel closed, get a new channel from channel factory");
         }
     }
 
@@ -158,6 +193,7 @@ public class ApnsChannel implements Channel, PayloadSender<NotifyPayload> {
      */
     @Override
     public void send(byte[] data) {
+        checkClosed();
         try {
             out().write(data);
         } catch (IOException e) {
@@ -174,6 +210,7 @@ public class ApnsChannel implements Channel, PayloadSender<NotifyPayload> {
      */
     @Override
     public int recv(byte[] data) {
+        checkClosed();
         try {
             return in().read(data);
         } catch (IOException e) {
@@ -189,6 +226,7 @@ public class ApnsChannel implements Channel, PayloadSender<NotifyPayload> {
      * <p>socket.</p>
      */
     protected void socket() throws IOException {
+        checkClosed();
         if (null != socket && null != in && null != out && !socket.isClosed()) {
             return;
         } else {

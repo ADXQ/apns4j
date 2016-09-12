@@ -16,13 +16,11 @@
  *
  */
 
-package cn.teaey.apns4j;
+package cn.teaey.apns4j.network.async;
 
+import cn.teaey.apns4j.ApnsHelper;
 import cn.teaey.apns4j.network.*;
-import cn.teaey.apns4j.network.async.ApnsFuture;
-import cn.teaey.apns4j.network.async.PayloadSender;
-import cn.teaey.apns4j.network.async.AsyncServiceShutdownException;
-import cn.teaey.apns4j.protocol.NotifyPayload;
+import cn.teaey.apns4j.protocol.ApnsPayload;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -35,7 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @date 13-8-31
  * @since 1.0.0
  */
-public class ApnsService implements PayloadSender<NotifyPayload> {
+public class ApnsService implements PayloadSender<ApnsPayload> {
     private static final int processors = Runtime.getRuntime().availableProcessors();
     private final int size;
     private final ApnsChannelFactory apnsChannelFactory;
@@ -43,8 +41,8 @@ public class ApnsService implements PayloadSender<NotifyPayload> {
     private final ExecutorService errorExecutor;
     private final AtomicBoolean START = new AtomicBoolean(true);
     private final int tryTimes;
-    private final ThreadLocal<PayloadSender<NotifyPayload>> threadSelfConnection = new ThreadLocal() {
-        protected PayloadSender<NotifyPayload> initialValue() {
+    private final ThreadLocal<PayloadSender<ApnsPayload>> threadSelfConnection = new ThreadLocal() {
+        protected PayloadSender<ApnsPayload> initialValue() {
             return apnsChannelFactory.newChannel();
         }
     };
@@ -64,11 +62,11 @@ public class ApnsService implements PayloadSender<NotifyPayload> {
         return new ApnsService(executorSize, apnsChannelFactory, tryTimes);
     }
 
-    public ApnsFuture sendAndFlush(String deviceToken, NotifyPayload payload) {
+    public ApnsFuture sendAndFlush(String deviceToken, ApnsPayload payload) {
         return this.sendAndFlush(ApnsHelper.toByteArray(deviceToken), payload);
     }
 
-    public ApnsFuture sendAndFlush(byte[] deviceToken, NotifyPayload payload) {
+    public ApnsFuture sendAndFlush(byte[] deviceToken, ApnsPayload payload) {
         if (!START.get()) {
             throw new AsyncServiceShutdownException("AsynService has shutdown");
         }
@@ -88,9 +86,9 @@ public class ApnsService implements PayloadSender<NotifyPayload> {
     //private static final Logger log = LoggerFactory.getLogger(APNSAsynService.class);
     class APNSAsynTask implements Callable<Object> {
         private final byte[] deviceToken;
-        private final NotifyPayload payload;
+        private final ApnsPayload payload;
 
-        public APNSAsynTask(byte[] deviceToken, NotifyPayload payload) {
+        public APNSAsynTask(byte[] deviceToken, ApnsPayload payload) {
             this.deviceToken = deviceToken;
             this.payload = payload;
         }

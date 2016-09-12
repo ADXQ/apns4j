@@ -16,7 +16,7 @@
  *
  */
 
-package cn.teaey.apns4j.network;
+package cn.teaey.apns4j;
 
 /**
  * @author xiaofei.wxf
