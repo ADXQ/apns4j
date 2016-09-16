@@ -33,7 +33,10 @@ public class ApnsPayload extends Payload {
     private static final String ATTR_BADGE = "badge";
     private static final String ATTR_SOUND = "sound";
     private static final String ATTR_ALERT_BODY = "body";
+    private static final String ATTR_ALERT_TITLE = "title";
     private static final String ATTR_ALERT_ACTION_LOC_KEY = "action-loc-key";
+    private static final String ATTR_ALERT_TITLE_LOC_KEY = "title-loc-key";
+    private static final String ATTR_ALERT_TITLE_LOC_ARGS = "title-loc-args";
     private static final String ATTR_ALERT_LOC_KEY = "loc-key";
     private static final String ATTR_ALERT_LOC_ARGS = "loc-args";
     private static final String ATTR_ALERT_LAUNCH_IMAGE = "launch-image";
@@ -82,6 +85,36 @@ public class ApnsPayload extends Payload {
      */
     public ApnsPayload alertBody(String body) {
         ensureAlertMap().put(ATTR_ALERT_BODY, body);
+        return this;
+    }
+
+    /**
+     * added in iOS 8.2
+     * @param title
+     * @return
+     */
+    public ApnsPayload alertTitle(String title) {
+        ensureAlertMap().put(ATTR_ALERT_TITLE, title);
+        return this;
+    }
+
+    /**
+     * added in iOS 8.2
+     * @param titleLocKey
+     * @return
+     */
+    public ApnsPayload alertTitleLocKey(String titleLocKey) {
+        ensureAlertMap().put(ATTR_ALERT_TITLE_LOC_KEY, titleLocKey);
+        return this;
+    }
+
+    /**
+     * added in iOS 8.2
+     * @param titleLocArgs
+     * @return
+     */
+    public ApnsPayload alertTitleLocArgs(String titleLocArgs) {
+        ensureAlertMap().put(ATTR_ALERT_TITLE_LOC_ARGS, titleLocArgs);
         return this;
     }
 
