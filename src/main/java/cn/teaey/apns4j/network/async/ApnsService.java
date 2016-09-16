@@ -18,14 +18,12 @@
 
 package cn.teaey.apns4j.network.async;
 
+import cn.teaey.apns4j.ApnsException;
 import cn.teaey.apns4j.ApnsHelper;
 import cn.teaey.apns4j.network.*;
 import cn.teaey.apns4j.protocol.ApnsPayload;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -47,19 +45,12 @@ public class ApnsService implements PayloadSender<ApnsPayload> {
         }
     };
 
-    private ApnsService(int executorSize, ApnsChannelFactory apnsChannelFactory, int tryTimes) {
+    public  ApnsService(int executorSize, ApnsChannelFactory apnsChannelFactory, int tryTimes) {
         this.size = (executorSize > processors) ? processors : executorSize;
         this.apnsChannelFactory = apnsChannelFactory;
         this.executorService = Executors.newFixedThreadPool(this.size);
         this.errorExecutor = Executors.newFixedThreadPool(1);
         this.tryTimes = tryTimes;
-    }
-    public static ApnsService newApnsService(int executorSize, ApnsChannelFactory apnsChannelFactory) {
-        return newApnsService(executorSize, apnsChannelFactory, ApnsChannel.DEFAULT_TRY_TIMES);
-    }
-
-    public static ApnsService newApnsService(int executorSize, ApnsChannelFactory apnsChannelFactory, int tryTimes) {
-        return new ApnsService(executorSize, apnsChannelFactory, tryTimes);
     }
 
     public ApnsFuture sendAndFlush(String deviceToken, ApnsPayload payload) {
@@ -80,6 +71,23 @@ public class ApnsService implements PayloadSender<ApnsPayload> {
     public void shutdown() {
         if (START.compareAndSet(true, false)) {
             executorService.shutdown();
+        }
+    }
+
+    public void shutdownNow() {
+        if (START.compareAndSet(true, false)) {
+            executorService.shutdownNow();
+        }
+    }
+
+    public void shutdown(long timeout, TimeUnit timeUnit) {
+        if (START.compareAndSet(true, false)) {
+            try {
+                executorService.shutdown();
+                executorService.awaitTermination(timeout, timeUnit);
+            } catch (InterruptedException e) {
+                throw new ApnsException(e);
+            }
         }
     }
 
